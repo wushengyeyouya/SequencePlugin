@@ -2,22 +2,28 @@ package vanstudio.sequence;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.*;
-import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.application.WriteAction;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.util.io.FileUtil;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiMethod;
 import com.intellij.ui.components.JBScrollBar;
 import com.intellij.ui.components.JBScrollPane;
-import com.intellij.util.concurrency.NonUrgentExecutor;
+import com.intellij.util.ExceptionUtil;
 import com.intellij.util.ui.UIUtil;
 import icons.SequencePluginIcons;
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.kotlin.psi.KtFunction;
+import vanstudio.sequence.agent.AgentEventHandlerFactory;
 import vanstudio.sequence.config.ConfigListener;
 import vanstudio.sequence.config.SequenceParamsState;
+import vanstudio.sequence.diagram.*;
+import vanstudio.sequence.formatter.JsonFormatter;
 import vanstudio.sequence.formatter.MermaidFormatter;
 import vanstudio.sequence.formatter.PlantUMLFormatter;
 import vanstudio.sequence.formatter.SdtFormatter;
@@ -27,9 +33,8 @@ import vanstudio.sequence.generator.filters.SingleMethodFilter;
 import vanstudio.sequence.openapi.*;
 import vanstudio.sequence.openapi.model.CallStack;
 import vanstudio.sequence.ui.MyButtonlessScrollBarUI;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.kotlin.psi.KtFunction;
-import vanstudio.sequence.diagram.*;
+import vanstudio.sequence.util.HttpUtils;
+import vanstudio.sequence.util.Utils;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -39,8 +44,10 @@ import java.awt.*;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
+import static vanstudio.sequence.agent.CreateFileAgentEventHandler.CREATE_FILE_OPERATION_TYPE;
 import static vanstudio.sequence.util.MyPsiUtil.getFileChooser;
 
 public class SequencePanel extends JPanel implements ConfigListener {
@@ -70,6 +77,8 @@ public class SequencePanel extends JPanel implements ConfigListener {
         _display = new Display(_model, new SequenceListenerImpl());
 
         DefaultActionGroup actionGroup = new DefaultActionGroup("SequencerActionGroup", false);
+        actionGroup.add(new DocGenerationAction());
+        actionGroup.addSeparator();
         actionGroup.add(new ReGenerateAction());
         actionGroup.add(new SequenceParamsEditor());
         actionGroup.addSeparator();
@@ -143,24 +152,32 @@ public class SequencePanel extends JPanel implements ConfigListener {
                         "Stop",
                         "Stop",
                         false);
-        ReadAction
-                .nonBlocking(() -> {
-                    final CallStack callStack = generator.generate(psiElement, null);
-                    if ( callStack == null || callStack.getMethod() == null) {
+        WriteAction
+                .runAndWait(() -> {
+                    CallStack callStack;
+                    try {
+                        callStack = generator.generate(psiElement, null);
+                    } catch (RuntimeException e) {
+                        finished.onFinish("Error...");
                         progressIndicator.processFinish();
-                        return "Generate...";
+                        LOGGER.warn(e);
+                        return;
+                    }
+                    if (callStack == null || callStack.getMethod() == null) {
+                        progressIndicator.processFinish();
+                        return;
                     }
                     buildNaviIndex(callStack, "1");
                     _titleName = callStack.getMethod().getTitleName();
+                    finished.onFinish(_titleName);
                     String format = new SdtFormatter().format(callStack);
                     generate(format);
                     progressIndicator.processFinish();
-                    return _titleName;
-                })
-                .wrapProgress(progressIndicator)
-                .finishOnUiThread(ModalityState.defaultModalityState(), title -> finished.onFinish(title))
-                .inSmartMode(project)
-                .submit(NonUrgentExecutor.getInstance());
+                });
+//                .wrapProgress(progressIndicator)
+//                .finishOnUiThread(ModalityState.defaultModalityState(), title -> finished.onFinish(title))
+//                .inSmartMode(project)
+//                .submit(NonUrgentExecutor.getInstance());
 
     }
 
@@ -186,6 +203,19 @@ public class SequencePanel extends JPanel implements ConfigListener {
             return new MermaidFormatter().format(callStack);
 
         return new PlantUMLFormatter().format(callStack);
+    }
+
+    public String generateSDJson() {
+        if (psiElement == null || !psiElement.isValid() || !(psiElement instanceof PsiMethod || psiElement instanceof KtFunction)) {
+            psiElement = null;
+            return "";
+        }
+
+        IGenerator generator = GeneratorFactory.createGenerator(psiElement.getLanguage(), _sequenceParams);
+
+        final CallStack callStack = generator.generate(psiElement, null);
+
+        return new JsonFormatter().format(callStack);
     }
 
     private void showBirdView() {
@@ -440,8 +470,50 @@ public class SequencePanel extends JPanel implements ConfigListener {
                     FileUtil.writeToFile(fileToSave, uml);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(SequencePanel.this, e.getMessage(), "Exception", JOptionPane.ERROR_MESSAGE);
+                LOGGER.warn(e);
+                JOptionPane.showMessageDialog(SequencePanel.this, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Export Exception", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+
+        @Override
+        public void update(@NotNull AnActionEvent e) {
+            e.getPresentation().setEnabled(psiElement != null);
+        }
+    }
+
+    private class DocGenerationAction extends AnAction {
+
+        public DocGenerationAction() {
+            super("Generate Doc ...", "Generate development docs", SequencePluginIcons.SEQUENCE_ICON_13);
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent event) {
+            if(event.getProject() == null) {
+                return;
+            }
+            String docName = Messages.showInputDialog(project, "Doc name(设计文档名):", "Create Dev Doc(生成设计文档)", Messages.getQuestionIcon());
+            if (StringUtils.isBlank(docName)) {
+                JOptionPane.showMessageDialog(SequencePanel.this, "Doc name cannot be empty(设计文档名不能为空！)", "Generate Doc Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            try {
+                String json = generateSDJson();
+                String projectName = event.getProject().getName();
+                Map<String, Object> requestBody = new HashMap<>();
+                requestBody.put("app_name", projectName);
+                requestBody.put("sequence_json", json);
+                Map<String, Object> devDocMap = HttpUtils.post(Utils.getDevDocGenerationUrl(), null, requestBody);
+                Utils.validateAgentResponse(devDocMap);
+                Map<String, Object> data = (Map<String, Object>) devDocMap.get("data");
+                String path = (String) data.get("path");
+                devDocMap.put("path", String.format(path, docName));
+                devDocMap.put("operationType", CREATE_FILE_OPERATION_TYPE);
+                devDocMap.put("content", data.get("designation_docs"));
+                AgentEventHandlerFactory.handle(devDocMap, event.getProject());
+            } catch (Exception e) {
+                LOGGER.warn(e);
+                JOptionPane.showMessageDialog(SequencePanel.this, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Generate Doc Error", JOptionPane.ERROR_MESSAGE);
             }
         }
 

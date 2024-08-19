@@ -29,7 +29,7 @@ public class PackageFilter implements MethodFilter {
             return !packageName.startsWith(_packageName);
         }
         else {
-            return !packageName.equals(_packageName);
+            return !packageName.equals(_packageName) && !packageName.startsWith(_packageName);
         }
     }
 

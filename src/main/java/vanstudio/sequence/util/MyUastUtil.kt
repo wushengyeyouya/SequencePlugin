@@ -1,43 +1,54 @@
 package vanstudio.sequence.util
 
+import com.intellij.openapi.diagnostic.Logger
 import org.jetbrains.uast.*
+import vanstudio.sequence.SequencePanel
 import vanstudio.sequence.diagram.Info
+import vanstudio.sequence.openapi.Constants
 import vanstudio.sequence.openapi.IGenerator.ParamPair
 import vanstudio.sequence.openapi.model.ClassDescription
 import vanstudio.sequence.openapi.model.LambdaExprDescription
 import vanstudio.sequence.openapi.model.MethodDescription
 
-fun createMethod(node: ULambdaExpression, offset: Int): MethodDescription {
+fun createMethod(node: ULambdaExpression, offset: Int): MethodDescription? {
     val paramPair: ParamPair = extractParameters(node.valueParameters)
     val returnType = node.getExpressionType()?.canonicalText
 
     val uMethod = node.getParentOfType(UMethod::class.java, true)
-    val enclosedMethod = createMethod(uMethod!!, offset)
+    if(uMethod == null) {
+        Logger.getInstance(SequencePanel::class.java).info("node.getParentOfType is null, node: $node")
+        return null
+    }
+    val enclosedMethod = createMethod(uMethod, offset) ?: return null
 
     return LambdaExprDescription(enclosedMethod, returnType, paramPair.argNames, paramPair.argTypes, offset)
 }
 
-fun createMethod(node: UMethod, offset: Int): MethodDescription {
+fun createMethod(node: UMethod, offset: Int): MethodDescription? {
     val paramPair: ParamPair = extractParameters(node.uastParameters)
     val containingUClass = node.getContainingUClass()
     val attributes = createAttributes(node)
+    val classDescription = createClassDescription(containingUClass)
+    if (classDescription.className == Constants.ANONYMOUS_CLASS_NAME) {
+        return null
+    }
 
     if (node.isConstructor) {
         return MethodDescription.createConstructorDescription(
-            createClassDescription(containingUClass),
+            classDescription,
             attributes, paramPair.argNames, paramPair.argTypes, offset
         )
     }
 
     val returnType = node.returnType
     return MethodDescription.createMethodDescription(
-        createClassDescription(containingUClass),
+        classDescription,
         attributes, node.name, returnType?.canonicalText,
         paramPair.argNames, paramPair.argTypes, offset
     )
 }
 
-fun createClassDescription(containingUClass: UClass?): ClassDescription? {
+fun createClassDescription(containingUClass: UClass?): ClassDescription {
     return ClassDescription(
         containingUClass?.qualifiedName,
         createAttributes(containingUClass)

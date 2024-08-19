@@ -1,10 +1,14 @@
 package vanstudio.sequence.ext.uast;
 
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.psi.*;
+import com.intellij.openapi.ui.Messages;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiType;
 import com.intellij.psi.search.searches.DefinitionsScopedSearch;
 import com.intellij.util.Query;
 import com.intellij.util.containers.Stack;
+import org.apache.commons.collections.CollectionUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.uast.*;
@@ -18,8 +22,8 @@ import vanstudio.sequence.openapi.model.MethodDescription;
 import vanstudio.sequence.util.MyPsiUtil;
 import vanstudio.sequence.util.MyUastUtilKt;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class UastSequenceGenerator extends AbstractUastVisitor implements IGenerator {
     private static final Logger LOGGER = Logger.getInstance(UastSequenceGenerator.class);
@@ -62,11 +66,17 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
 
     private void generateLambda(ULambdaExpression node) {
         MethodDescription method = MyUastUtilKt.createMethod(node, MyPsiUtil.findNaviOffset(node.getSourcePsi()));
+        if(method == null) {
+            return;
+        }
         makeMethodCallExceptCurrentStackIsRecursive(method);
         node.getBody().accept(this);
     }
 
     private void generateMethod(UMethod uMethod) {
+        if (uMethod == null) {
+            return;
+        }
         UClass containingUClass = UastUtils.getContainingUClass(uMethod);
 
         if (containingUClass != null && containingUClass.isInterface() && !MyUastUtilKt.isExternal(containingUClass)) {
@@ -76,19 +86,33 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
             PsiElement sourcePsi = uMethod.getSourcePsi();
             if (sourcePsi != null) {
                 Query<PsiElement> search = DefinitionsScopedSearch.search(sourcePsi).allowParallelProcessing();
-
-                for (PsiElement psiElement : search) {
-
-                    if (psiElement instanceof PsiMethod) {
+                Collection<PsiElement> searched = search.findAll();
+                if (searched.isEmpty()) {
+                    return;
+                }
+                PsiElement selectedPsiMethod;
+                if (searched.size() > 1) {
+                    Map<String, PsiElement> className2Method = searched.stream().map(psiElement -> {
                         UMethod method = UastContextKt.toUElement(psiElement, UMethod.class);
-//                        if (alreadyInStack((PsiMethod) psiElement)) continue;
-
-                        if (method != null && params.getImplementationWhiteList().allow(psiElement)) {
-                            if (params.getMethodFilter().allow(psiElement)) {
-                                method.accept(this);
-                            }
+                        if (method != null && method.getContainingClass() != null) {
+                            return new Object[]{method.getContainingClass().getQualifiedName(), psiElement};
+                        } else {
+                            return null;
                         }
+                    }).filter(Objects::nonNull).collect(Collectors.toMap(array -> (String) array[0], array -> (PsiElement) array[1]));
+                    if (className2Method.isEmpty()) {
+                        return;
                     }
+                    String[] classes = className2Method.keySet().toArray(new String[0]);
+                    String selectedClass = Messages.showEditableChooseDialog(uMethod.getContainingClass().getQualifiedName(), "Ensure implemetation(确认继承关系)",
+                            Messages.getQuestionIcon(), classes, classes[0], null);
+                    selectedPsiMethod = className2Method.get(selectedClass);
+                } else {
+                    selectedPsiMethod = (PsiMethod) CollectionUtils.get(searched, 0);
+                }
+                UMethod selectedMethod = UastContextKt.toUElement(selectedPsiMethod, UMethod.class);
+                if (selectedMethod != null && params.getMethodFilter().allow(selectedPsiMethod)) {
+                    selectedMethod.accept(this);
                 }
             }
         } else {
@@ -130,7 +154,12 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
             currentStack = oldStack;
         } else {
             UMethod uMethod = UastContextKt.toUElement(psiMethod, UMethod.class);
-            if (uMethod != null) currentStack.methodCall(MyUastUtilKt.createMethod(uMethod, offset));
+            if (uMethod != null) {
+                MethodDescription methodDescription = MyUastUtilKt.createMethod(uMethod, offset);
+                if(methodDescription != null) {
+                    currentStack.methodCall(methodDescription);
+                }
+            }
         }
     }
 
@@ -140,6 +169,9 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
         int offset = offsetStack.isEmpty() ? MyPsiUtil.findNaviOffset(node.getSourcePsi()) : offsetStack.pop();
 
         MethodDescription method = MyUastUtilKt.createMethod(node, offset);
+        if (method == null) {
+            return false;
+        }
         return makeMethodCallExceptCurrentStackIsRecursive(method);
 //        return super.visitMethod(node);
     }

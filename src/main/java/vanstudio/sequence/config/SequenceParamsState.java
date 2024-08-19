@@ -8,19 +8,21 @@ import com.intellij.util.xmlb.XmlSerializerUtil;
 import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import vanstudio.sequence.util.Utils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @State(name = "sequenceParams", storages = {@Storage("sequencePlugin.xml")})
 public class SequenceParamsState implements PersistentStateComponent<SequenceParamsState> {
-    public int callDepth = 5;
+    public int callDepth = 8;
     public boolean projectClassesOnly = true;
     public boolean noGetterSetters = true;
     public boolean noPrivateMethods = false;
     public boolean noConstructors = false;
-    @Deprecated(since = "2.2.0", forRemoval = true)
+    @Deprecated
     public boolean smartInterface = false;
+    public String agentUrl = Utils.BDP_AGENT_URL;
 
     @Transient
     private final List<ConfigListener> _listeners = new ArrayList<>();

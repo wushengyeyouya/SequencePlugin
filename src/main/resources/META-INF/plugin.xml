@@ -1,9 +1,9 @@
 <idea-plugin>
     <id>SequenceDiagram</id>
-    <name>SequenceDiagram</name>
+    <name>BDP-Agent</name>
     <description><![CDATA[
-<h3>SequenceDiagram for IntelliJ IDEA</h3>
-<a href="http://vanco.github.io/SequencePlugin">http://vanco.github.io/SequencePlugin.</a>
+<h3>BDP-Agent for IntelliJ IDEA</h3>
+<a href="http://sit.agent.bdp.weoa.com/">http://sit.agent.bdp.weoa.com/.</a>
 
 <p>with this plugin, you can<br>
 + generate Simple Sequence Diagram.<br>
@@ -21,7 +21,7 @@ The original version SequencePlugin come from ksibilev@yahoo.com.</p>
 
 ]]></description>
     <version>1.2.4</version>
-    <vendor email="fanhuagang@gmail.com">VanStudio</vendor>
+    <vendor email="enjoyyin@webank.com">BDP-Agent</vendor>
     <idea-version since-build="201.6668.113"/>
 
     <depends>com.intellij.modules.platform</depends>
@@ -35,21 +35,27 @@ The original version SequencePlugin come from ksibilev@yahoo.com.</p>
     <change-notes/>
 
     <actions>
-        <action id="SequencePlugin.ShowSequenceDiagram" class="vanstudio.sequence.ShowSequenceAction"
-                icon="SequencePluginIcons.SEQUENCE_ICON"
-                text="Sequence Diagram"
-                description="Generate sequence diagram of the current method">
-            <add-to-group group-id="EditorPopupMenu" anchor="after" relative-to-action="ShowIntentionsGroup"/>
-<!--            <add-to-group group-id="StructureViewPopupMenu" anchor="after" relative-to-action="RefactoringMenu"/>-->
-            <add-to-group group-id="ToolsMenu" anchor="last"/>
-            <keyboard-shortcut first-keystroke="alt S" keymap="$default"/>
+       <group id="SequencePlugin.SequenceDiagramGroup"
+               icon="SequencePluginIcons.SEQUENCE_ICON" text="BDP-Agent" popup="true">
+           <add-to-group group-id="EditorPopupMenu" anchor="first"/>
+           <action id="SequencePlugin.ShowSequenceDiagram" class="vanstudio.sequence.ShowSequenceAction"
+                   icon="SequencePluginIcons.SEQUENCE_ICON"
+                   text="Sequence Diagram"
+                   description="Generate sequence diagram of the current method">
+               <add-to-group group-id="ToolsMenu" anchor="last"/>
+               <keyboard-shortcut first-keystroke="alt S" keymap="$default"/>
+           </action>
+           <action id="SequencePlugin.WritToRAG"
+                   class="vanstudio.sequence.agent.WriteToRAGAction"
+                   icon="SequencePluginIcons.SAVE_ICON"
+                   text="WritToRAG">
+               <keyboard-shortcut first-keystroke="alt D" keymap="$default"/>
+           </action>
+        </group>
+        <action id="SequencePlugin.CreateNewTask" class="vanstudio.sequence.agent.CreateNewTaskAction"
+                text="AgentTask" description="BDP agent Task" icon="AllIcons.FileTypes.AddAny">
+            <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewFile"/>
         </action>
-       <!-- <group id="SequencePlugin.SequenceDiagramGroup"
-               class="vanstudio.sequence.ShowSequenceActionGroup"
-               icon="SequencePluginIcons.SEQUENCE_ICON" text="Sequence Diagram..." popup="true">
-&lt;!&ndash;            <add-to-group group-id="ProjectViewPopupMenu" anchor="before" relative-to-action="AssociateWithFileType"/>&ndash;&gt;
-            <add-to-group group-id="NavBarToolBarOthers" anchor="first"/>
-        </group>-->
     </actions>
 
     <extensionPoints>

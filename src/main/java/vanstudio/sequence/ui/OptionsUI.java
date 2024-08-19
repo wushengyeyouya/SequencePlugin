@@ -2,8 +2,10 @@ package vanstudio.sequence.ui;
 
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.DialogWrapper;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.JBUI;
 import vanstudio.sequence.config.SequenceParamsState;
+import vanstudio.sequence.util.Utils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,6 +19,7 @@ public class OptionsUI {
         private final JCheckBox jCheckBoxNPM;
         private final JCheckBox jCheckBoxNC;
 //        private final JCheckBox jCheckBoxSI;
+        private final JBTextField jbTextFieldUrl;
 
         public DialogPanel() {
             super(new GridBagLayout());
@@ -32,7 +35,7 @@ public class OptionsUI {
 
             gc.gridx = 1;
             gc.anchor = GridBagConstraints.CENTER;
-            jSpinner = new JSpinner(new SpinnerNumberModel(state.callDepth, 1, 10, 1));
+            jSpinner = new JSpinner(new SpinnerNumberModel(state.callDepth, 1, 20, 1));
             jLabel.setLabelFor(jSpinner);
             add(jSpinner, gc);
 
@@ -75,6 +78,20 @@ public class OptionsUI {
             gc.insets = JBUI.emptyInsets();
             jCheckBoxNC = new JCheckBox("Skip constructors", state.noConstructors);
             add(jCheckBoxNC, gc);
+
+            gc.gridx = 0;
+            gc.gridy = 3;
+            gc.insets = JBUI.insets(5);
+            gc.anchor = GridBagConstraints.WEST;
+            JLabel urlJLabel = new JLabel("BDP-Agent URL:");
+            add(urlJLabel, gc);
+
+            gc.gridx = 2;
+            gc.anchor = GridBagConstraints.WEST;
+            jbTextFieldUrl = new JBTextField(state.agentUrl, 50);
+            jbTextFieldUrl.setMinimumSize(new Dimension(180, 30));
+            urlJLabel.setLabelFor(jbTextFieldUrl);
+            add(jbTextFieldUrl, gc);
         }
     }
 
@@ -84,7 +101,7 @@ public class OptionsUI {
         public OptionsDialogWrapper(Project project) {
             super(project, false);
             setResizable(false);
-            setTitle("Sequence Diagram Options");
+            setTitle("BDP-Agent Options");
             init();
         }
 
@@ -119,6 +136,9 @@ public class OptionsUI {
 //        public boolean isSmartInterface() {
 //            return dialogPanel.jCheckBoxSI.isSelected();
 //        }
+        public String getAgentUrl() {
+            return dialogPanel.jbTextFieldUrl.getText();
+        }
     }
 
 }

@@ -21,9 +21,9 @@ public class SequenceToolWindowsFactory implements ToolWindowFactory {
     }
 
     private void addEmptyContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        Welcome welcome = new Welcome();
+        Welcome welcome = new Welcome(project);
         ContentManager contentManager = toolWindow.getContentManager();
-        Content emptyDiagram = contentManager.getFactory().createContent(welcome.getMainPanel(), "Welcome", false);
+        Content emptyDiagram = contentManager.getFactory().createContent(welcome.getMainPanel(), "BDP-Agent", false);
         emptyDiagram.setCloseable(false);
         contentManager.addContent(emptyDiagram);
 

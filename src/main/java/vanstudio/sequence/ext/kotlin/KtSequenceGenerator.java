@@ -467,7 +467,7 @@ public class KtSequenceGenerator extends KtTreeVisitorVoid implements IGenerator
         }
 
         if (typeElement instanceof KtFunctionType) {
-            return typeElement.getText().replaceAll("[\\(|\\)]", "_").replaceAll(" ", "");//.replaceAll("->", "→");
+            return typeElement.getText().replaceAll("[\\(|\\)]", "_").replaceAll(" ", "");
         }
 
         return "Unit";

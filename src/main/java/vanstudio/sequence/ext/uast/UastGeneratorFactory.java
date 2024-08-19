@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import vanstudio.sequence.config.ExcludeEntry;
 import vanstudio.sequence.config.SequenceParamsState;
 import vanstudio.sequence.config.SequenceSettingsState;
+import vanstudio.sequence.ext.uast.filters.NoExceptionFilter;
 import vanstudio.sequence.ext.uast.filters.UastNoConstructorsFilter;
 import vanstudio.sequence.ext.uast.filters.UastNoPrivateMethodsFilter;
 import vanstudio.sequence.ext.uast.filters.UastSingleClassFilter;
@@ -37,6 +38,7 @@ public class UastGeneratorFactory extends GeneratorFactory {
         params.getMethodFilter().addFilter(new NoGetterSetterFilter(state.noGetterSetters));
         params.getMethodFilter().addFilter(new UastNoPrivateMethodsFilter(state.noPrivateMethods));
         params.getMethodFilter().addFilter(new UastNoConstructorsFilter(state.noConstructors));
+        params.getMethodFilter().addFilter(new NoExceptionFilter());
 
         List<ExcludeEntry> excludeList = SequenceSettingsState.getInstance().getExcludeList();
         for (ExcludeEntry excludeEntry : excludeList) {

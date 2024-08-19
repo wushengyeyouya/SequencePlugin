@@ -17,6 +17,8 @@ import org.jetbrains.annotations.NotNull;
 import vanstudio.sequence.SequencePanel;
 import vanstudio.sequence.SequenceParamsEditor;
 import vanstudio.sequence.SequenceService;
+import vanstudio.sequence.agent.CreateNewTaskAction;
+import vanstudio.sequence.agent.RefreshAgentUrlAction;
 import vanstudio.sequence.diagram.Parser;
 import vanstudio.sequence.openapi.model.MethodDescription;
 import vanstudio.sequence.util.MyPsiUtil;
@@ -39,10 +41,14 @@ import static vanstudio.sequence.util.MyPsiUtil.getFileChooser;
 public class Welcome {
     private final JPanel myHtmlPanelWrapper;
 
-    public Welcome() {
+    public Welcome(Project project) {
         DefaultActionGroup actionGroup = new DefaultActionGroup("SequencerActionGroup", false);
-        actionGroup.add(new LoadAction());
+        TaskUI taskUI = new TaskUI(project, null);
+        actionGroup.add(new CreateNewTaskAction());
+        actionGroup.add(new RefreshAgentUrlAction(taskUI));
+        actionGroup.addSeparator();
         actionGroup.add(new SequenceParamsEditor());
+        actionGroup.add(new LoadAction());
 
         ActionManager actionManager = ActionManager.getInstance();
         ActionToolbar actionToolbar = actionManager.createActionToolbar("SequencerToolbar", actionGroup, false);
@@ -50,10 +56,12 @@ public class Welcome {
         myHtmlPanelWrapper = new JPanel(new BorderLayout());
         myHtmlPanelWrapper.add(actionToolbar.getComponent(), BorderLayout.WEST);
         JTextPane myPanel = new JTextPane();
-        myHtmlPanelWrapper.add(new JScrollPane(myPanel), BorderLayout.CENTER);
+        myHtmlPanelWrapper.add(new JScrollPane(taskUI.getMainPanel()), BorderLayout.CENTER);
+//        myHtmlPanelWrapper.add(new JScrollPane(myPanel), BorderLayout.CENTER);
         myHtmlPanelWrapper.repaint();
 
-        actionToolbar.setTargetComponent(myPanel);
+//        actionToolbar.setTargetComponent(myPanel);
+        actionToolbar.setTargetComponent(taskUI.getMainPanel());
 
         String currentHtml = loadWelcome();
         myPanel.setEditable(false);
