@@ -28,27 +28,36 @@ public class CreateFileAgentEventHandler implements AgentEventHandler {
     @Override
     public Map<String, Object> handle(Map<String, Object> eventMap, Project project) {
         String location = (String) eventMap.get("path");
+        String path = getPath(location);
         String content = (String) eventMap.get("content");
+        boolean overwrite = eventMap.containsKey("overwrite") && (boolean) eventMap.get("overwrite");
         WriteCommandAction.runWriteCommandAction(project, () -> {
             // Split the full path into directories and file name
-            String[] parts = location.split("/");
-            StringBuilder dirPath = new StringBuilder();
+            String[] parts = path.split("/");
             PsiDirectory currentDirectory = PsiManager.getInstance(project).findDirectory(project.getBaseDir());
 
             // Create missing directories
             for (int i = 0; i < parts.length - 1; i++) {
-                dirPath.append("/").append(parts[i]);
                 PsiDirectory childDirectory = currentDirectory.findSubdirectory(parts[i]);
                 if (childDirectory == null) {
                     childDirectory = currentDirectory.createSubdirectory(parts[i]);
                 }
                 currentDirectory = childDirectory;
             }
+            String fileName = parts[parts.length - 1];
+            PsiFile psiFile = currentDirectory.findFile(fileName);
+            if (psiFile != null && !overwrite) {
+                throw new RuntimeException("file " + fileName + " is already exists.");
+            }
 
             // Create the file
             PsiFile file = PsiFileFactory.getInstance(project)
-                    .createFileFromText(parts[parts.length - 1], getFileType(parts[parts.length - 1]), content);
-            currentDirectory.add(file);
+                    .createFileFromText(fileName, getFileType(fileName), content);
+            if (psiFile != null) {
+                psiFile.replace(file);
+            } else {
+                currentDirectory.add(file);
+            }
             // Open the file in the editor
             ApplicationManager.getApplication().invokeLater(() -> file.navigate(true));
 
@@ -68,5 +77,14 @@ public class CreateFileAgentEventHandler implements AgentEventHandler {
         } else {
             return PlainTextFileType.INSTANCE;
         }
+    }
+
+    public static String getPath(String path) {
+        if (path.startsWith("/")) {
+            return path.substring(1);
+        } else if (path.startsWith("./")) {
+            return path.substring(2);
+        }
+        return path;
     }
 }

@@ -5,6 +5,7 @@ import com.intellij.dvcs.repo.VcsRepositoryManager;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Messages;
 import com.intellij.openapi.wm.ToolWindow;
@@ -14,6 +15,7 @@ import com.intellij.ui.content.ContentManager;
 import com.intellij.util.ExceptionUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
 import vanstudio.sequence.SequenceService;
 import vanstudio.sequence.ui.TaskUI;
@@ -26,6 +28,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class CreateNewTaskAction extends AnAction {
+
+    private static final Logger LOGGER = Logger.getInstance(CreateNewTaskAction.class);
 
     public CreateNewTaskAction() {
         super("Create AgentTask", "Create a new development agent task.", AllIcons.Actions.AddFile);
@@ -53,8 +57,10 @@ public class CreateNewTaskAction extends AnAction {
             Map<String, Object> responseBody = HttpUtils.post(Utils.getCreateTaskUrl(), null, requestBody);
             Utils.validateAgentResponse(responseBody);
             Map<String, Object> data = (Map<String, Object>) responseBody.get("data");
-            taskId = (int) data.get("requirement_id");
+            taskId = NumberUtils.toInt(String.valueOf(data.get("requirement_id")));
+            LOGGER.info("from " + data.get("requirement_id") + " to " + taskId);
         } catch (Exception e) {
+            LOGGER.warn(e);
             JOptionPane.showMessageDialog(null, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Create new requirement task", JOptionPane.ERROR_MESSAGE);
             return;
         }

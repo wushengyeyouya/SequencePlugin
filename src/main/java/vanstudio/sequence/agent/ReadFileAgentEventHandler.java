@@ -17,6 +17,7 @@ public class ReadFileAgentEventHandler implements AgentEventHandler {
     @Override
     public Map<String, Object> handle(Map<String, Object> eventMap, Project project) {
         String path = (String) eventMap.get("path");
+        path = CreateFileAgentEventHandler.getPath(path);
         PsiDirectory currentDirectory = PsiManager.getInstance(project).findDirectory(project.getBaseDir());
         String[] paths = path.split("/");
         for (int i = 0; i < paths.length - 1; i++) {

@@ -1,5 +1,6 @@
 package vanstudio.sequence.agent;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import static vanstudio.sequence.util.Utils.gson;
 
 public class AgentEventHandlerFactory {
 
+    private static final Logger LOGGER = Logger.getInstance(AgentEventHandlerFactory.class);
     private static final Map<String, AgentEventHandler> agentEventHandlers = new HashMap<>();
     static {
         agentEventHandlers.put(CREATE_FILE_OPERATION_TYPE, new CreateFileAgentEventHandler());
@@ -28,12 +30,15 @@ public class AgentEventHandlerFactory {
         if (!agentEventHandlers.containsKey(operationType)) {
             throw new IllegalArgumentException("not exists operationType " + operationType);
         }
+        LOGGER.info("BDP-Agent want IDEA to handle <" + operationType + "> with eventMap: " + eventMap);
         Map<String, Object> handleResultMap =  agentEventHandlers.get(operationType).handle(eventMap, project);
         if (handleResultMap == null) {
             handleResultMap = new HashMap<>();
         }
         handleResultMap.put("operationId", id);
-        return gson.toJson(handleResultMap);
+        String handleJson = gson.toJson(handleResultMap);
+        LOGGER.info("IDEA handled <" + operationType + "> with result: " + handleJson);
+        return handleJson;
     }
 
 }

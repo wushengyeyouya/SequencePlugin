@@ -1,6 +1,7 @@
 package vanstudio.sequence.util;
 
-import com.google.gson.Gson;
+import com.google.gson.*;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefBrowserBuilder;
 import com.intellij.ui.jcef.JBCefCookie;
@@ -9,14 +10,26 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.cookie.BasicClientCookie;
+import org.cef.browser.CefBrowser;
 import vanstudio.sequence.config.SequenceParamsState;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public class Utils {
 
-    public static final Gson gson = new Gson();
+    public static final Gson gson = new GsonBuilder().disableHtmlEscaping().setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").serializeNulls()
+            .registerTypeAdapter(Double.class, (JsonSerializer<Double>) (t, type, jsonSerializationContext) -> {
+                if (t == t.longValue()) {
+                    return new JsonPrimitive(t.longValue());
+                } else {
+                    return new JsonPrimitive(t);
+                }
+            })
+            .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsLong()))
+            .create();
+    private static final Logger LOGGER = Logger.getInstance(Utils.class);
 
     public static final String BDP_AGENT_URL = "http://sit.agent.bdp.weoa.com";
 
@@ -31,8 +44,7 @@ public class Utils {
 
     public static JBCefBrowser createJBCefBrowser() {
         // 创建 JBCefBrowser
-        JBCefBrowserBuilder builder = JBCefBrowser.createBuilder();
-        JBCefBrowser jbCefBrowser = JBCefBrowser.create(builder);
+        JBCefBrowser jbCefBrowser = JBCefBrowser.create(JBCefBrowser.createBuilder());
         if (cookies == null) {
             synchronized (BDP_AGENT_URL) {
                 if(cookies == null) {
@@ -50,9 +62,21 @@ public class Utils {
         }
         List<JBCefCookie> cookieList = cookies.getCookies();
         cookieList.forEach(cookie -> {
-            cookieStore.addCookie(new BasicClientCookie(cookie.getCefCookie().name, cookie.getCefCookie().value));
+            boolean isExist = cookieStore.getCookies().stream()
+                    .anyMatch(existed -> existed.getName().equals(cookie.getName()) && existed.getDomain().equals(cookie.getDomain()));
+            if (!isExist) {
+                BasicClientCookie cookie1 = new BasicClientCookie(cookie.getName(), cookie.getValue());
+                cookie1.setDomain(cookie.getDomain());
+                cookie1.setPath(cookie.getPath());
+                cookieStore.addCookie(cookie1);
+                LOGGER.info("add cookie " + cookie1 + " to Host " + cookie1.getDomain());
+            }
         });
         return httpClient;
+    }
+
+    public static boolean isDevMode() {
+        return SequenceParamsState.getInstance().agentUrl.contains("127.0.0.1");
     }
 
     private static String getUrl(String uri, boolean isBackend) {

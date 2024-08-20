@@ -205,17 +205,18 @@ public class SequencePanel extends JPanel implements ConfigListener {
         return new PlantUMLFormatter().format(callStack);
     }
 
-    public String generateSDJson() {
+    public String[] generateSDJsonAndUML() {
         if (psiElement == null || !psiElement.isValid() || !(psiElement instanceof PsiMethod || psiElement instanceof KtFunction)) {
             psiElement = null;
-            return "";
+            return null;
         }
 
         IGenerator generator = GeneratorFactory.createGenerator(psiElement.getLanguage(), _sequenceParams);
 
         final CallStack callStack = generator.generate(psiElement, null);
 
-        return new JsonFormatter().format(callStack);
+        return new String[] {new JsonFormatter().format(callStack),
+                new PlantUMLFormatter().format(callStack)};
     }
 
     private void showBirdView() {
@@ -492,29 +493,44 @@ public class SequencePanel extends JPanel implements ConfigListener {
             if(event.getProject() == null) {
                 return;
             }
+            BackgroundableProcessIndicator progressIndicator =
+                    new BackgroundableProcessIndicator(
+                            project,
+                            "Generate development doc...",
+                            PerformInBackgroundOption.ALWAYS_BACKGROUND,
+                            "Stop",
+                            "Stop",
+                            false);
             String docName = Messages.showInputDialog(project, "Doc name(设计文档名):", "Create Dev Doc(生成设计文档)", Messages.getQuestionIcon());
             if (StringUtils.isBlank(docName)) {
+                progressIndicator.processFinish();
                 JOptionPane.showMessageDialog(SequencePanel.this, "Doc name cannot be empty(设计文档名不能为空！)", "Generate Doc Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            progressIndicator.setText("Try to generate sequence diagram(正在生成时序图)...");
             try {
-                String json = generateSDJson();
+                String[] jsonAndUML = generateSDJsonAndUML();
+                progressIndicator.setText2("Sequence diagram generated, ask BDP-Agent for docs(时序图已生成，正在请求BDP-Agent生成设计文档)...");
                 String projectName = event.getProject().getName();
                 Map<String, Object> requestBody = new HashMap<>();
                 requestBody.put("app_name", projectName);
-                requestBody.put("sequence_json", json);
+                requestBody.put("sequence_json", jsonAndUML[0]);
+                requestBody.put("plant_uml", jsonAndUML[1]);
                 Map<String, Object> devDocMap = HttpUtils.post(Utils.getDevDocGenerationUrl(), null, requestBody);
                 Utils.validateAgentResponse(devDocMap);
+                progressIndicator.setText2("BDP-Agent answered docs, try to ask IDEA to show docs(BDP-Agent已生成设计文档，正在创建并打开文件)...");
                 Map<String, Object> data = (Map<String, Object>) devDocMap.get("data");
                 String path = (String) data.get("path");
                 devDocMap.put("path", String.format(path, docName));
                 devDocMap.put("operationType", CREATE_FILE_OPERATION_TYPE);
                 devDocMap.put("content", data.get("designation_docs"));
+                devDocMap.put("overwrite", true);
                 AgentEventHandlerFactory.handle(devDocMap, event.getProject());
             } catch (Exception e) {
                 LOGGER.warn(e);
                 JOptionPane.showMessageDialog(SequencePanel.this, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Generate Doc Error", JOptionPane.ERROR_MESSAGE);
             }
+            progressIndicator.processFinish();
         }
 
         @Override

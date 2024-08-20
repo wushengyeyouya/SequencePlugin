@@ -1,6 +1,7 @@
 package vanstudio.sequence.ui;
 
 import com.google.gson.JsonSyntaxException;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
@@ -20,6 +21,8 @@ import java.awt.*;
 import static vanstudio.sequence.util.Utils.createJBCefBrowser;
 
 public class TaskUI {
+
+    private static final Logger LOGGER = Logger.getInstance(TaskUI.class);
 
     private final JPanel htmlPanelWrapper;
     private JBCefBrowser jbCefBrowser;
@@ -45,12 +48,17 @@ public class TaskUI {
         register(jbCefBrowser, project);
     }
 
+    public JBCefBrowser getJbCefBrowser() {
+        return jbCefBrowser;
+    }
+
     public void reload() {
         if (url == null) {
             jbCefBrowser.loadURL(SequenceParamsState.getInstance().agentUrl);
         } else {
             jbCefBrowser.loadURL(url);
         }
+        jbCefBrowser.getCefBrowser().reloadIgnoreCache();
     }
 
     private void register(JBCefBrowser browser, Project project) {
@@ -60,8 +68,10 @@ public class TaskUI {
                 String responseMsg = AgentEventHandlerFactory.handle(arg, project);
                 return new JBCefJSQuery.Response(responseMsg);
             } catch (JsonSyntaxException e) {
+                LOGGER.warn(e);
                 return new JBCefJSQuery.Response(ExceptionUtil.getThrowableText(e), 1000, ExceptionUtil.getMessage(e));
             } catch (Exception e) {
+                LOGGER.warn(e);
                 return new JBCefJSQuery.Response(ExceptionUtil.getThrowableText(e), 2000, ExceptionUtil.getMessage(e));
             }
         });
@@ -75,19 +85,19 @@ public class TaskUI {
             }
             @Override
             public void onLoadEnd(CefBrowser cefBrowser, CefFrame frame, int httpStatusCode) {
-                cefBrowser.executeJavaScript(
-                        "window.callIDEA = function(arg, successCallback, failureCallback) {" +
-                                query.inject(
-                                        "arg",
-                                        "response => successCallback(response)",
-                                        "(error_code, error_message) => failureCallback(error_code, error_message)"
-                                ) +
-                                "};",
-                        null, 0);
+                LOGGER.info("register window.callIDEA.");
+                cefBrowser.executeJavaScript("window.callIDEA = function(arg, successCallback, failureCallback) {" +
+                        query.inject(
+                                "arg",
+                                "function(response) {successCallback(response)}",
+                                "function(error_code, error_message) {failureCallback(error_code, error_message)}"
+                        ) +
+                        "};alert('window.callIDEA registered.');", browser.getCefBrowser().getURL(), 0);
             }
 
             @Override
             public void onLoadError(CefBrowser cefBrowser, CefFrame frame, ErrorCode errorCode, String errorText, String failedUrl) {
+                LOGGER.warn("load error. errorCode: " + errorCode + ", errorText: " + errorText);
             }
         }, browser.getCefBrowser());
     }

@@ -18,10 +18,12 @@ import vanstudio.sequence.SequencePanel;
 import vanstudio.sequence.SequenceParamsEditor;
 import vanstudio.sequence.SequenceService;
 import vanstudio.sequence.agent.CreateNewTaskAction;
+import vanstudio.sequence.agent.OpenDevtoolsAction;
 import vanstudio.sequence.agent.RefreshAgentUrlAction;
 import vanstudio.sequence.diagram.Parser;
 import vanstudio.sequence.openapi.model.MethodDescription;
 import vanstudio.sequence.util.MyPsiUtil;
+import vanstudio.sequence.util.Utils;
 
 import javax.swing.*;
 import javax.swing.text.Document;
@@ -46,6 +48,9 @@ public class Welcome {
         TaskUI taskUI = new TaskUI(project, null);
         actionGroup.add(new CreateNewTaskAction());
         actionGroup.add(new RefreshAgentUrlAction(taskUI));
+        if(Utils.isDevMode()) {
+            actionGroup.add(new OpenDevtoolsAction(taskUI));
+        }
         actionGroup.addSeparator();
         actionGroup.add(new SequenceParamsEditor());
         actionGroup.add(new LoadAction());

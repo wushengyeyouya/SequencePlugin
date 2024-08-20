@@ -22,10 +22,11 @@ public class UpdateFileAgentEventHandler implements AgentEventHandler {
     @Override
     public Map<String, Object> handle(Map<String, Object> eventMap, Project project) {
         String location = (String) eventMap.get("path");
+        String path = CreateFileAgentEventHandler.getPath(location);
         String content = (String) eventMap.get("content");
         WriteCommandAction.runWriteCommandAction(project, () -> {
             // Split the full path into directories and file name
-            String[] parts = location.split("/");
+            String[] parts = path.split("/");
             StringBuilder dirPath = new StringBuilder();
             PsiDirectory currentDirectory = PsiManager.getInstance(project).findDirectory(project.getBaseDir());
 
