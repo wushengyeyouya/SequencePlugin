@@ -27,6 +27,7 @@ public class Utils {
                     return new JsonPrimitive(t);
                 }
             })
+            .setObjectToNumberStrategy(ToNumberPolicy.LAZILY_PARSED_NUMBER)
             .registerTypeAdapter(Date.class, (JsonDeserializer<Date>) (json, typeOfT, context) -> new Date(json.getAsLong()))
             .create();
     private static final Logger LOGGER = Logger.getInstance(Utils.class);
@@ -61,6 +62,9 @@ public class Utils {
             throw new NullPointerException("Please open BDP-Agent window to login at first(请先打开BDP-Agent窗口完成登录！)");
         }
         List<JBCefCookie> cookieList = cookies.getCookies();
+        if (cookieList.isEmpty()) {
+            throw new NullPointerException("Please login BDP-Agent at first(请先登录BDP-Agent).");
+        }
         cookieList.forEach(cookie -> {
             boolean isExist = cookieStore.getCookies().stream()
                     .anyMatch(existed -> existed.getName().equals(cookie.getName()) && existed.getDomain().equals(cookie.getDomain()));

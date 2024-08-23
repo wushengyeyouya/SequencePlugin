@@ -54,10 +54,10 @@ public class CreateFileAgentEventHandler implements AgentEventHandler {
             PsiFile file = PsiFileFactory.getInstance(project)
                     .createFileFromText(fileName, getFileType(fileName), content);
             if (psiFile != null) {
-                psiFile.replace(file);
-            } else {
-                currentDirectory.add(file);
+                psiFile.delete();
             }
+            currentDirectory.add(file);
+
             // Open the file in the editor
             ApplicationManager.getApplication().invokeLater(() -> file.navigate(true));
 

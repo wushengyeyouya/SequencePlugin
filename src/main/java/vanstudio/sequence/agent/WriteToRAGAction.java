@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys;
 import com.intellij.openapi.progress.PerformInBackgroundOption;
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator;
 import com.intellij.openapi.project.Project;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.util.ExceptionUtil;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,14 @@ import java.util.Map;
 import java.util.Objects;
 
 public class WriteToRAGAction extends ShowSequenceAction {
+
+    @Override
+    public void update(@NotNull AnActionEvent event) {
+        super.update(event);
+        PsiElement psiElement = event.getData(CommonDataKeys.PSI_FILE);
+        event.getPresentation().setEnabled(psiElement != null && psiElement.getContainingFile().getName().endsWith(".md"));
+    }
+
     @Override
     public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
         Project project = anActionEvent.getProject();

@@ -507,7 +507,8 @@ public class SequencePanel extends JPanel implements ConfigListener {
                 JOptionPane.showMessageDialog(SequencePanel.this, "Doc name cannot be empty(设计文档名不能为空！)", "Generate Doc Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            progressIndicator.setText("Try to generate sequence diagram(正在生成时序图)...");
+            progressIndicator.setText("Generate " + docName);
+            progressIndicator.setText2("Try to generate sequence diagram(正在生成时序图)...");
             try {
                 String[] jsonAndUML = generateSDJsonAndUML();
                 progressIndicator.setText2("Sequence diagram generated, ask BDP-Agent for docs(时序图已生成，正在请求BDP-Agent生成设计文档)...");
@@ -521,11 +522,17 @@ public class SequencePanel extends JPanel implements ConfigListener {
                 progressIndicator.setText2("BDP-Agent answered docs, try to ask IDEA to show docs(BDP-Agent已生成设计文档，正在创建并打开文件)...");
                 Map<String, Object> data = (Map<String, Object>) devDocMap.get("data");
                 String path = (String) data.get("path");
+                String content = (String) data.get("designation_docs");
+                content = content.replace("#### 业务流程", "#### 业务流程\n![SequenceDiagram](SequenceDiagram.jpg)");
                 devDocMap.put("path", String.format(path, docName));
                 devDocMap.put("operationType", CREATE_FILE_OPERATION_TYPE);
-                devDocMap.put("content", data.get("designation_docs"));
+                devDocMap.put("content", content);
                 devDocMap.put("overwrite", true);
                 AgentEventHandlerFactory.handle(devDocMap, event.getProject());
+                String jpgRelativePath = new File(String.format(path, docName)).getParentFile().getPath() + "/SequenceDiagram.jpg";
+                File jpgPath = new File(project.getBasePath(), jpgRelativePath);
+                LOGGER.info("export sequenceDiagram to path " + jpgPath);
+                _display.saveImageToSvgFile(jpgPath, "jpg");
             } catch (Exception e) {
                 LOGGER.warn(e);
                 JOptionPane.showMessageDialog(SequencePanel.this, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Generate Doc Error", JOptionPane.ERROR_MESSAGE);

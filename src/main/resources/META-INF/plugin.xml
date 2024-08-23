@@ -45,15 +45,27 @@ The original version SequencePlugin come from ksibilev@yahoo.com.</p>
                <add-to-group group-id="ToolsMenu" anchor="last"/>
                <keyboard-shortcut first-keystroke="alt S" keymap="$default"/>
            </action>
+           <action id="SequencePlugin.createDesignationTask"
+                   class="vanstudio.sequence.agent.CreateNewDesignationTaskAction"
+                   icon="AllIcons.Actions.AddList"
+                   text="CreateDesignationTask(从生成设计文档开始)">
+               <keyboard-shortcut first-keystroke="alt D" keymap="$default"/>
+           </action>
+           <action id="SequencePlugin.createPseudocodeTask"
+                   class="vanstudio.sequence.agent.CreateNewPseudocodeTaskAction"
+                   icon="AllIcons.Actions.ChangeView"
+                   text="CreatePseudocodeTask(从生成伪代码开始)">
+               <keyboard-shortcut first-keystroke="alt F" keymap="$default"/>
+           </action>
            <action id="SequencePlugin.WritToRAG"
                    class="vanstudio.sequence.agent.WriteToRAGAction"
                    icon="SequencePluginIcons.SAVE_ICON"
                    text="WritToRAG">
-               <keyboard-shortcut first-keystroke="alt D" keymap="$default"/>
+               <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
            </action>
         </group>
         <action id="SequencePlugin.CreateNewTask" class="vanstudio.sequence.agent.CreateNewTaskAction"
-                text="AgentTask" description="BDP agent Task" icon="AllIcons.FileTypes.AddAny">
+                text="AgentTask" description="BDP agent Task" icon="AllIcons.Actions.Annotate">
             <add-to-group group-id="NewGroup" anchor="after" relative-to-action="NewFile"/>
         </action>
     </actions>

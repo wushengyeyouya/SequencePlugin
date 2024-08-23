@@ -14,9 +14,11 @@ import org.cef.handler.CefLoadHandler;
 import org.cef.network.CefRequest;
 import vanstudio.sequence.agent.AgentEventHandlerFactory;
 import vanstudio.sequence.config.SequenceParamsState;
+import vanstudio.sequence.util.Utils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 
 import static vanstudio.sequence.util.Utils.createJBCefBrowser;
 
@@ -27,6 +29,7 @@ public class TaskUI {
     private final JPanel htmlPanelWrapper;
     private JBCefBrowser jbCefBrowser;
     private String url;
+    private boolean isTaskUILoaded = false;
 
     public TaskUI(Project project, String url) {
         this.url = url;
@@ -61,6 +64,26 @@ public class TaskUI {
         jbCefBrowser.getCefBrowser().reloadIgnoreCache();
     }
 
+    public void sendEvent(Map<String, Object> eventMap) {
+        String eventStr = Utils.gson.toJson(eventMap);
+        String javaScript = "receiveEvent('"+eventStr+"')";
+        long startTime = System.currentTimeMillis();
+        while(!isTaskUILoaded && System.currentTimeMillis() - startTime < 20000) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                //ignore
+            }
+        }
+        if (!isTaskUILoaded) {
+            LOGGER.warn("url " + url + "did not loaded after 30s, ignore the event " + eventStr);
+            return;
+        }
+        LOGGER.info(String.format("try to send event to url(%s) with params: %s",
+                jbCefBrowser.getCefBrowser().getURL(), eventStr));
+        jbCefBrowser.getCefBrowser().executeJavaScript(javaScript, url, 0);
+    }
+
     private void register(JBCefBrowser browser, Project project) {
         JBCefJSQuery query = JBCefJSQuery.create((JBCefBrowserBase) browser);
         query.addHandler((String arg) -> {
@@ -92,7 +115,8 @@ public class TaskUI {
                                 "function(response) {successCallback(response)}",
                                 "function(error_code, error_message) {failureCallback(error_code, error_message)}"
                         ) +
-                        "};alert('window.callIDEA registered.');", browser.getCefBrowser().getURL(), 0);
+                        "};", browser.getCefBrowser().getURL(), 0);
+                isTaskUILoaded = true;
             }
 
             @Override
