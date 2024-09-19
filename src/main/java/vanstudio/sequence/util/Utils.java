@@ -115,6 +115,14 @@ public class Utils {
         return getUrl("api/step_rag/writeToRAG", true);
     }
 
+    public static String getGenerateReadmeUrl() {
+        return getUrl("api/step_rag/generateReadme", true);
+    }
+
+    public static String getGenerateDefinitionUrl() {
+        return getUrl("api/step_rag/generateDefinition", true);
+    }
+
     public static void validateAgentResponse(Map<String, Object> responseBody) {
         if (responseBody.containsKey("success")) {
             boolean success = (boolean) responseBody.get("success");

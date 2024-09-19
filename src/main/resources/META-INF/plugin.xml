@@ -59,8 +59,20 @@ The original version SequencePlugin come from ksibilev@yahoo.com.</p>
            </action>
            <action id="SequencePlugin.WritToRAG"
                    class="vanstudio.sequence.agent.WriteToRAGAction"
-                   icon="SequencePluginIcons.SAVE_ICON"
-                   text="WritToRAG">
+                   icon="AllIcons.Actions.SuggestedRefactoringBulb"
+                   text="WritToRAG(文档写入RAG)">
+               <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
+           </action>
+           <action id="SequencePlugin.generateReadme"
+                   class="vanstudio.sequence.agent.GenerateReadmeAction"
+                   icon="AllIcons.Actions.Annotate"
+                   text="GenerateReadme(生成Readme)">
+               <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
+           </action>
+           <action id="SequencePlugin.generateDefinition"
+                   class="vanstudio.sequence.agent.GenerateDefinitionAction"
+                   icon="AllIcons.Actions.DynamicUsages"
+                   text="GenerateDefinition(生成概念定义文档)">
                <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
            </action>
         </group>

@@ -85,7 +85,7 @@ public class CreateNewTaskAction extends AnAction {
         contentManager.addContent(content);
         contentManager.setSelectedContent(content);
         ReadAction.nonBlocking(() -> afterTaskUICreated(anActionEvent, taskUI))
-                .inSmartMode(project).submit(NonUrgentExecutor.getInstance());
+                .submit(NonUrgentExecutor.getInstance());
     }
 
     protected void afterTaskUICreated(AnActionEvent anActionEvent, TaskUI taskUI) {
