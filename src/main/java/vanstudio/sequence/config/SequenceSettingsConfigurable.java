@@ -13,7 +13,7 @@ public class SequenceSettingsConfigurable implements SearchableConfigurable {
 
     @Override
     public String getDisplayName() {
-        return "Sequence Diagram";
+        return "BDP-Agent";
     }
 
     @Override

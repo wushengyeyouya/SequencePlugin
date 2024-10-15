@@ -8,7 +8,7 @@ import com.intellij.psi.PsiElement;
  */
 public interface SequenceService {
     String PLUGIN_ID = "SequenceDiagram";
-    String PLUGIN_NAME = "Sequence Diagram";
+    String PLUGIN_NAME = "BDP-Agent";
 
     void showSequence(PsiElement psiElement);
 

@@ -107,20 +107,24 @@ public class Utils {
         return getUrl("task.html?task_id=" + taskId, false);
     }
 
-    public static String getDevDocGenerationUrl() {
-        return getUrl("api/step_design/genDevDoc", true);
+    public static String getIDEAUrl(String params) {
+        return getUrl("idea_async.html?" + params, false);
+    }
+
+    public static String getDevDocGenerationUri() {
+        return "/step_design/genDevDoc";
     }
 
     public static String getWriteToRAGUrl() {
         return getUrl("api/step_rag/writeToRAG", true);
     }
 
-    public static String getGenerateReadmeUrl() {
-        return getUrl("api/step_rag/generateReadme", true);
+    public static String getGenerateReadmeUri() {
+        return "/step_rag/generateReadme";
     }
 
-    public static String getGenerateDefinitionUrl() {
-        return getUrl("api/step_rag/generateDefinition", true);
+    public static String getGenerateDefinitionUri() {
+        return "/step_rag/generateDefinition";
     }
 
     public static void validateAgentResponse(Map<String, Object> responseBody) {

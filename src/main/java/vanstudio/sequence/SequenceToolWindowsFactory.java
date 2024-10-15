@@ -16,14 +16,13 @@ public class SequenceToolWindowsFactory implements ToolWindowFactory {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-
         addEmptyContent(project, toolWindow);
     }
 
     private void addEmptyContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
         Welcome welcome = new Welcome(project);
         ContentManager contentManager = toolWindow.getContentManager();
-        Content emptyDiagram = contentManager.getFactory().createContent(welcome.getMainPanel(), "BDP-Agent", false);
+        Content emptyDiagram = contentManager.getFactory().createContent(welcome.getMainPanel(), "IndexPage(首页)", false);
         emptyDiagram.setCloseable(false);
         contentManager.addContent(emptyDiagram);
 

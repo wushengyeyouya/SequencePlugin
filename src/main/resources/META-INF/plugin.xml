@@ -103,13 +103,13 @@ The original version SequencePlugin come from ksibilev@yahoo.com.</p>
         <applicationConfigurable parentId="tools"
                                  id="Settings.Sequence.Configuration"
                                  instance="vanstudio.sequence.config.SequenceSettingsConfigurable"
-                                 displayName="Sequence Diagram"/>
+                                 displayName="BDP-Agent"/>
         <applicationService serviceImplementation="vanstudio.sequence.config.SequenceSettingsState"/>
         <applicationService serviceImplementation="vanstudio.sequence.config.SequenceParamsState"/>
-        <toolWindow id="Sequence Diagram" icon="SequencePluginIcons.SEQUENCE_ICON_13" anchor="bottom"
+        <toolWindow id="BDP-Agent" icon="SequencePluginIcons.SEQUENCE_ICON_13" anchor="bottom"
                     factoryClass="vanstudio.sequence.SequenceToolWindowsFactory" canCloseContents="true"/>
         <!-- Since idea 2020.3.x -->
-        <notificationGroup displayType="BALLOON" id="Sequence Diagram"/>
+        <notificationGroup displayType="BALLOON" id="BDP-Agent"/>
 
         <projectService serviceInterface="vanstudio.sequence.SequenceService"
                         serviceImplementation="vanstudio.sequence.impl.SequenceServiceImpl"/>

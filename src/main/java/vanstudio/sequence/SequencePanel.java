@@ -21,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.concurrency.CancellablePromise;
 import org.jetbrains.kotlin.psi.KtFunction;
 import vanstudio.sequence.agent.AgentEventHandlerFactory;
+import vanstudio.sequence.agent.GenerateReadmeAction;
 import vanstudio.sequence.config.ConfigListener;
 import vanstudio.sequence.config.SequenceParamsState;
 import vanstudio.sequence.diagram.*;
@@ -485,78 +486,88 @@ public class SequencePanel extends JPanel implements ConfigListener {
         }
     }
 
-    private class DocGenerationAction extends AnAction {
+    private class DocGenerationAction extends GenerateReadmeAction {
 
         public DocGenerationAction() {
             super("Generate Doc ...", "Generate development docs", SequencePluginIcons.SEQUENCE_ICON_13);
         }
 
-        @Override
-        public void actionPerformed(@NotNull AnActionEvent event) {
-            if(event.getProject() == null) {
-                return;
-            }
-            BackgroundableProcessIndicator progressIndicator =
-                    new BackgroundableProcessIndicator(
-                            project,
-                            "Generate development doc...",
-                            PerformInBackgroundOption.DEAF,
-                            "Stop",
-                            "Stop",
-                            true);
-//            String docName = Messages.showInputDialog(project, "Doc name(设计文档名):", "Create Dev Doc(生成设计文档)", Messages.getQuestionIcon());
-//            if (StringUtils.isBlank(docName)) {
-//                progressIndicator.processFinish();
-//                JOptionPane.showMessageDialog(SequencePanel.this, "Doc name cannot be empty(设计文档名不能为空！)", "Generate Doc Error", JOptionPane.ERROR_MESSAGE);
+//        @Override
+//        public void actionPerformed(@NotNull AnActionEvent event) {
+//            if(event.getProject() == null) {
 //                return;
 //            }
-            progressIndicator.setText("Generate development doc...");
-            progressIndicator.setText2("Try to generate sequence diagram(正在生成时序图)...");
-            progressIndicator.setIndeterminate(false);
-//            @NotNull CancellablePromise<Void> action = ReadAction.nonBlocking(() -> {
-                        try {
-                            String[] jsonAndUML = generateSDJsonAndUML();
-                            progressIndicator.setFraction(0.4);
-                            progressIndicator.setText2("Sequence diagram generated, ask BDP-Agent for docs(时序图已生成，正在请求BDP-Agent生成设计文档)...");
-                            String projectName = event.getProject().getName();
-                            Map<String, Object> requestBody = new HashMap<>();
-                            requestBody.put("app_name", projectName);
-                            requestBody.put("sequence_json", jsonAndUML[0]);
-                            requestBody.put("plant_uml", jsonAndUML[1]);
-                            Map<String, Object> devDocMap = HttpUtils.post(Utils.getDevDocGenerationUrl(), null, requestBody);
-                            Utils.validateAgentResponse(devDocMap);
-                            progressIndicator.setFraction(0.9);
-                            progressIndicator.setText2("BDP-Agent answered docs, try to ask IDEA to show docs(BDP-Agent已生成设计文档，正在创建并打开文件)...");
-                            Map<String, Object> data = (Map<String, Object>) devDocMap.get("data");
-                            String path = (String) data.get("path");
-                            String content = (String) data.get("designation_docs");
-                            String docName = (String) data.get("doc_name");
-                            content = content.replace("#### 业务流程", "#### 业务流程\n![SequenceDiagram](SequenceDiagram.jpg)");
-                            devDocMap.put("path", String.format(path, docName));
-                            devDocMap.put("operationType", CREATE_FILE_OPERATION_TYPE);
-                            devDocMap.put("content", content);
-                            devDocMap.put("overwrite", true);
-                            AgentEventHandlerFactory.handle(devDocMap, event.getProject());
-                            String jpgRelativePath = new File(String.format(path, docName)).getParentFile().getPath() + "/SequenceDiagram.jpg";
-                            File jpgPath = new File(project.getBasePath(), jpgRelativePath);
-                            LOGGER.info("export sequenceDiagram to path " + jpgPath);
-                            _display.saveImageToSvgFile(jpgPath, "jpg");
-                            progressIndicator.processFinish();
-                            JOptionPane.showMessageDialog(null, "Generate Development docs succeed!", "Generate docs", JOptionPane.INFORMATION_MESSAGE);
-                        } catch (Exception e) {
-                            progressIndicator.processFinish();
-                            LOGGER.warn(ExceptionUtil.getRootCause(e));
-                            JOptionPane.showMessageDialog(null, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Generate Docs Error", JOptionPane.ERROR_MESSAGE);
-                        }
-//            }).wrapProgress(progressIndicator)
-//                .inSmartMode(project)
-//                .submit(NonUrgentExecutor.getInstance());
+//            BackgroundableProcessIndicator progressIndicator =
+//                    new BackgroundableProcessIndicator(
+//                            project,
+//                            "Generate development doc...",
+//                            PerformInBackgroundOption.DEAF,
+//                            "Stop",
+//                            "Stop",
+//                            true);
+//            progressIndicator.setText("Generate development doc...");
+//            progressIndicator.setText2("Try to generate sequence diagram(正在生成时序图)...");
+//            progressIndicator.setIndeterminate(false);
+//            try {
+//                String[] jsonAndUML = generateSDJsonAndUML();
+//                progressIndicator.setFraction(0.4);
+//                progressIndicator.setText2("Sequence diagram generated, ask BDP-Agent for docs(时序图已生成，正在请求BDP-Agent生成设计文档)...");
+//                String projectName = event.getProject().getName();
+//                Map<String, Object> requestBody = new HashMap<>();
+//                requestBody.put("app_name", projectName);
+//                requestBody.put("sequence_json", jsonAndUML[0]);
+//                requestBody.put("plant_uml", jsonAndUML[1]);
+//                Map<String, Object> devDocMap = HttpUtils.post(Utils.getDevDocGenerationUrl(), null, requestBody);
+//                Utils.validateAgentResponse(devDocMap);
+//                progressIndicator.setFraction(0.9);
+//                progressIndicator.setText2("BDP-Agent answered docs, try to ask IDEA to show docs(BDP-Agent已生成设计文档，正在创建并打开文件)...");
+//                Map<String, Object> data = (Map<String, Object>) devDocMap.get("data");
+//                String path = (String) data.get("path");
+//                String content = (String) data.get("designation_docs");
+//                String docName = (String) data.get("doc_name");
+//                content = content.replace("#### 业务流程", "#### 业务流程\n![SequenceDiagram](SequenceDiagram.jpg)");
+//                devDocMap.put("path", String.format(path, docName));
+//                devDocMap.put("operationType", CREATE_FILE_OPERATION_TYPE);
+//                devDocMap.put("content", content);
+//                devDocMap.put("overwrite", true);
+//                AgentEventHandlerFactory.handle(devDocMap, event.getProject());
+//                String jpgRelativePath = new File(String.format(path, docName)).getParentFile().getPath() + "/SequenceDiagram.jpg";
+//                File jpgPath = new File(project.getBasePath(), jpgRelativePath);
+//                LOGGER.info("export sequenceDiagram to path " + jpgPath);
+//                _display.saveImageToSvgFile(jpgPath, "jpg");
+//                progressIndicator.processFinish();
+//                JOptionPane.showMessageDialog(null, "Generate Development docs succeed!", "Generate docs", JOptionPane.INFORMATION_MESSAGE);
+//            } catch (Exception e) {
+//                progressIndicator.processFinish();
+//                LOGGER.warn(ExceptionUtil.getRootCause(e));
+//                JOptionPane.showMessageDialog(null, ExceptionUtil.getNonEmptyMessage(e, "Failed with no message."), "Generate Docs Error", JOptionPane.ERROR_MESSAGE);
+//            }
+//        }
+
+        @Override
+        protected void setParams(Map<String, Object> paramsMap, AnActionEvent anActionEvent) {
+            super.setParams(paramsMap, anActionEvent);
+            String[] jsonAndUML = generateSDJsonAndUML();
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("app_name", anActionEvent.getProject().getName());
+            requestBody.put("sequence_json", jsonAndUML[0]);
+            requestBody.put("plant_uml", jsonAndUML[1]);
+            paramsMap.put("request_body", Utils.gson.toJson(requestBody));
+            paramsMap.put("content_key", "designation_docs");
+            paramsMap.put("uri", Utils.getDevDocGenerationUri());
+            paramsMap.remove("path");
         }
 
         @Override
-        public void update(@NotNull AnActionEvent e) {
-            e.getPresentation().setEnabled(psiElement != null);
+        protected String getUiTitle() {
+            return "生成设计文档-" + getTitleName();
         }
+
+
+//        @Override
+//        public void update(@NotNull AnActionEvent e) {
+//            e.getPresentation().setEnabled(psiElement != null);
+//        }
     }
 
 
