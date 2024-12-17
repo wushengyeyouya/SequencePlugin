@@ -42,10 +42,12 @@ public class JsonFormatter implements IFormatter{
             return null;
         }
         callStackMap.put("method", method);
+        callStackMap.put("index", parent.getIndex());
         String key = getKey(callStackMap);
         if (Constants.CONSTRUCTOR_METHOD_NAME.equals(parent.getMethod().getMethodName())) {
             callStackMap.put("isConstructor", true);
         }
+        callStackMap.put("subClasses", parent.getSubClasses());
         Map<String, Map<String, Object>> childCallStackMaps = new HashMap<>();
         for (CallStack callStack : parent.getCalls()) {
             Map<String, Object> childCallStackMap = generate(callStack);

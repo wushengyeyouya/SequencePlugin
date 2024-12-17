@@ -3,10 +3,13 @@ package vanstudio.sequence.openapi.model;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class CallStack {
     private final MethodDescription _method;
+    private final List<String> _subClasses = new ArrayList<>();
+    private int index;
     private final CallStack _parent;
     private final List<CallStack> _calls = new ArrayList<>();
 
@@ -25,6 +28,11 @@ public class CallStack {
         return callStack;
     }
 
+    public CallStack addSubClasses(Collection<String> subClasses) {
+        _subClasses.addAll(subClasses);
+        return this;
+    }
+
     public boolean isRecursive(MethodDescription method) {
         CallStack current = this;
         while(current != null) {
@@ -41,6 +49,18 @@ public class CallStack {
 
     public List<CallStack> getCalls() {
         return _calls;
+    }
+
+    public List<String> getSubClasses() {
+        return _subClasses;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
+    }
+
+    public int getIndex() {
+        return index;
     }
 
     public int level() {

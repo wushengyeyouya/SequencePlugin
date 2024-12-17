@@ -33,6 +33,7 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
     private final ArrayList<String> imfCache = new ArrayList<>();
     private CallStack topStack;
     private CallStack currentStack;
+    private int index = 0;
     private final SequenceParams params;
 
     private final boolean SHOW_LAMBDA_CALL;
@@ -54,6 +55,8 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
         if (parent != null) {
             topStack = parent;
             currentStack = topStack;
+            currentStack.setIndex(index);
+            index++;
         }
         if (psiElement instanceof UMethod) {
             generateMethod((UMethod) psiElement);
@@ -104,9 +107,22 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
                         return;
                     }
                     String[] classes = className2Method.keySet().toArray(new String[0]);
-                    String selectedClass = Messages.showEditableChooseDialog(uMethod.getContainingClass().getQualifiedName(), "Ensure implemetation(确认继承关系)",
-                            Messages.getQuestionIcon(), classes, classes[0], null);
-                    selectedPsiMethod = className2Method.get(selectedClass);
+                    this.currentStack.addSubClasses(className2Method.keySet());
+                    if (params.isShowEditableChooseDialog()) {
+                        String selectedClass = Messages.showEditableChooseDialog(uMethod.getContainingClass().getQualifiedName(), "Ensure implemetation(确认继承关系)",
+                                Messages.getQuestionIcon(), classes, classes[0], null);
+                        selectedPsiMethod = className2Method.get(selectedClass);
+                    } else {
+                        List<PsiElement> sortedPsiElements = className2Method.values().stream().sorted(Comparator.comparingInt(psiElement -> {
+                            UMethod method = UastContextKt.toUElement(psiElement, UMethod.class);
+                            if (method.getUastBody() == null) {
+                                return 0;
+                            } else {
+                                return method.getUastBody().asSourceString().length();
+                            }
+                        })).collect(Collectors.toList());
+                        selectedPsiMethod = sortedPsiElements.get(0);
+                    }
                 } else {
                     selectedPsiMethod = (PsiMethod) CollectionUtils.get(searched, 0);
                 }
@@ -137,6 +153,8 @@ public class UastSequenceGenerator extends AbstractUastVisitor implements IGener
                 return true;
             currentStack = currentStack.methodCall(method);
         }
+        currentStack.setIndex(index);
+        index++;
         return false;
     }
 

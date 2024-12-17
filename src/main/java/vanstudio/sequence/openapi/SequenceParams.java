@@ -13,6 +13,7 @@ public class SequenceParams {
     private boolean smartInterface = false;
     private final CompositeElementFilter _methodFilter = new CompositeElementFilter();
     private final ImplementationWhiteList _implFilter = new ImplementationWhiteList();
+    private boolean showEditableChooseDialog = true;
 
     public SequenceParams() {
     }
@@ -49,6 +50,14 @@ public class SequenceParams {
 
     public ImplementationWhiteList getImplementationWhiteList() {
         return _implFilter;
+    }
+
+    public boolean isShowEditableChooseDialog() {
+        return showEditableChooseDialog;
+    }
+
+    public void setShowEditableChooseDialog(boolean showEditableChooseDialog) {
+        this.showEditableChooseDialog = showEditableChooseDialog;
     }
 }
 

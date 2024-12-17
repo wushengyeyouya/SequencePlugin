@@ -17,6 +17,7 @@ public class AgentEventHandlerFactory {
         agentEventHandlers.put(CREATE_FILE_OPERATION_TYPE, new CreateFileAgentEventHandler());
         agentEventHandlers.put("readFile", new ReadFileAgentEventHandler());
         agentEventHandlers.put(UpdateFileAgentEventHandler.UPDATE_FILE_OPERATION_TYPE, new UpdateFileAgentEventHandler());
+        agentEventHandlers.put("genDevDoc", new GenDevDocEventHandler());
     }
 
     public static String handle(String eventStr, Project project) {

@@ -63,6 +63,12 @@ The original version SequencePlugin come from ksibilev@yahoo.com.</p>
                    text="WritToRAG(文档写入RAG)">
                <keyboard-shortcut first-keystroke="alt G" keymap="$default"/>
            </action>
+           <action id="SequencePlugin.generateAllDevDocs"
+                   class="vanstudio.sequence.agent.GenAllDevDocsAction"
+                   icon="AllIcons.Actions.DiagramDiff"
+                   text="GenerateAllDev(自动生成所有设计文档)">
+               <keyboard-shortcut first-keystroke="alt H" keymap="$default"/>
+           </action>
            <action id="SequencePlugin.generateReadme"
                    class="vanstudio.sequence.agent.GenerateReadmeAction"
                    icon="AllIcons.Actions.Annotate"
